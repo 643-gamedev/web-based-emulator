@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Web Assembly OS Booter</title>
+    <title>Universal Web OS Launcher</title>
     
-    <!-- Load stable production engine layers -->
-    <script src="https://copy.sh"></script>
-    <script src="https://bellard.org"></script>
+    <!-- Using unpkg stable mirror to ensure global initialization on HTTPS platforms -->
+    <script src="https://unpkg.com"></script>
 
     <style>
         * { box-sizing: border-box; }
@@ -39,19 +38,16 @@
             padding-bottom: 6px;
             margin-top: 5px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         .engine-box {
             background-color: #1e1e1e;
             padding: 16px;
             border-radius: 6px;
             border: 1px solid #2d2d2d;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
         .engine-name { font-weight: bold; color: #4CAF50; font-size: 15px; margin-bottom: 4px; }
         .desc { font-size: 13px; color: #aaa; margin-bottom: 12px; line-height: 1.4; }
         
-        /* Fixed layout row preventing layout misalignments */
         .input-row { 
             display: flex; 
             align-items: center; 
@@ -67,8 +63,6 @@
             color: #fff;
             font-size: 13px;
             cursor: pointer;
-            flex-grow: 1;
-            max-width: 400px;
         }
         button {
             background-color: #248afd;
@@ -79,12 +73,9 @@
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
         }
         button:hover { background-color: #1a6ec7; }
-        button:active { transform: scale(0.98); }
         
-        /* Viewport configuration header items */
         .viewport-header {
             display: flex;
             justify-content: space-between;
@@ -93,19 +84,14 @@
             border-bottom: 2px solid #2d2d2d;
             padding-bottom: 6px;
         }
-        .viewport-header .section-header {
-            border: none;
-            margin: 0;
-            padding: 0;
-        }
         .fullscreen-btn {
             background-color: #333;
             border: 1px solid #444;
             color: #fff;
             padding: 6px 14px;
             font-size: 12px;
+            cursor: pointer;
         }
-        .fullscreen-btn:hover { background-color: #444; border-color: #555; }
 
         #screen-viewport {
             background-color: #000000;
@@ -118,17 +104,8 @@
             align-items: center;
             position: relative;
             overflow: auto;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
-        
-        /* Handles native fullscreen browser mode styling rules cleanly */
-        #screen-viewport:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            border-radius: 0;
-            background-color: #000;
-        }
+        #screen-viewport:fullscreen { width: 100vw; height: 100vh; border: none; }
         
         #v86_canvas {
             white-space: pre;
@@ -137,59 +114,25 @@
             line-height: 14px;
         }
         #v86_canvas canvas { display: block; max-width: 100%; height: auto; }
-        #term_canvas { padding: 10px; font-family: monospace; width: 100%; height: 100%; }
-        
-        .status-msg {
-            padding: 30px; 
-            text-align: center; 
-            color: #ff9900;
-            font-size: 14px;
-            line-height: 1.6;
-            max-width: 600px;
-        }
-        .status-msg span { color:#aaa; font-size:13px; display: block; margin-top: 8px; }
+        .status-msg { padding: 30px; text-align: center; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h1>Universal Web OS Launcher</h1>
-    <div class="subtitle">An isolated WebAssembly sandbox infrastructure platform running entirely inside your local memory space.</div>
+    <div class="subtitle">An isolated WebAssembly sandbox running inside local browser memory.</div>
 
     <div id="workspace">
-        
-        <!-- MODULE A: 32-BIT GENERAL PURPOSE VM -->
         <div class="section-header">🖥️ Engine 1: High-Compatibility x86 (v86 JIT)</div>
         <div class="engine-box">
             <div class="engine-name">Optimized v86 Engine Pipeline</div>
-            <div class="desc"><strong>Use this option for your 684 MB Arch Linux ISO file.</strong> This specific engine configuration allocates a full Pentium-level CPU vector layout with high-memory addressing options turned on.</div>
+            <div class="desc">Select your 684 MB Arch Linux ISO file (`i686`) here. It will boot directly inside your browser tab window.</div>
             <div class="input-row">
                 <input type="file" id="v86-file" accept=".iso">
                 <button id="run-v86">Boot 32-Bit Arch Linux</button>
             </div>
         </div>
 
-        <!-- MODULE B: 64-BIT SPECIALIZED STRUCTURES -->
-        <div class="section-header">⚙️ 64-Bit Simulation Engines</div>
-        
-        <div class="engine-box">
-            <div class="engine-name">Engine 2: TinyEMU Framework (RISC-V 64)</div>
-            <div class="desc">Executes raw 64-bit kernels natively inside WebAssembly using the RISC-V compute instruction framework. Requires a 64-bit RISC-V device block.</div>
-            <div class="input-row">
-                <input type="file" id="tinyemu-file">
-                <button id="run-tinyemu">Boot RISC-V 64</button>
-            </div>
-        </div>
-
-        <div class="engine-box">
-            <div class="engine-name">Engine 3: Bochs WASM Assembly Engine</div>
-            <div class="desc">A full software-interpreted x86_64 emulation core wrapper. Requires structural `.bochsrc` system mapping text variables to compile frames.</div>
-            <div class="input-row">
-                <input type="file" id="bochs-file" accept=".iso,.img">
-                <button id="run-bochs">Boot Bochs 64</button>
-            </div>
-        </div>
-
-        <!-- OUTPUT TELEMETRY FRAMEWORK -->
         <div class="viewport-header">
             <div class="section-header">📺 Virtual Output Monitor</div>
             <button class="fullscreen-btn" id="go-fullscreen">Toggle Fullscreen Mode</button>
@@ -197,95 +140,51 @@
         
         <div id="screen-viewport">
             <div id="v86_canvas"></div>
-            <div id="term_canvas"></div>
-            <div id="welcome-msg" class="status-msg" style="color: #666;">No virtual machine active. Select an ISO image file above to begin execution.</div>
+            <div id="welcome-msg" class="status-msg">No virtual machine active. Select your Arch Linux ISO file above to start.</div>
         </div>
     </div>
 
     <script>
         const v86Canvas = document.getElementById('v86_canvas');
-        const termCanvas = document.getElementById('term_canvas');
         const viewport = document.getElementById('screen-viewport');
         const welcomeMsg = document.getElementById('welcome-msg');
 
-        function wipeViewport() {
-            if(welcomeMsg) welcomeMsg.remove();
-            v86Canvas.innerHTML = '';
-            termCanvas.innerHTML = '';
-            window.vm_send_chars = null;
-        }
-
-        // --- FULLSCREEN INTERACTION HANDLER ---
         document.getElementById('go-fullscreen').onclick = function() {
             if (!document.fullscreenElement) {
-                viewport.requestFullscreen().catch(err => {
-                    alert(`Could not toggle fullscreen mode: ${err.message}`);
-                });
+                viewport.requestFullscreen().catch(err => alert(err.message));
             } else {
                 document.exitFullscreen();
             }
         };
 
-        // --- ENGINE 1 IMPLEMENTATION (v86 Launcher configured for Arch 32) ---
         document.getElementById('run-v86').onclick = function() {
             const input = document.getElementById('v86-file');
             if (input.files.length === 0) { return alert("Please select your 684MB Arch Linux .iso file first!"); }
-            wipeViewport();
             
-            // Initializing high-compatibility emulator architecture settings
-            new V86({
-                wasm_path: "https://copy.sh",
-                screen_container: v86Canvas,
-                bios: { url: "https://copy.sh" },
-                vga_bios: { url: "https://copy.sh" },
-                cdrom: { file: input.files }, 
-                boot_order: 0x123, // Force boot sequentially from CD-ROM drive
-                memory_size: 768 * 1024 * 1024, // High memory allocation pool for Arch extraction
-                vga_memory_size: 16 * 1024 * 1024, // Expanded VGA buffer to process high resolution assets
-                acpi: true, // Enables Advanced Configuration and Power Interface
-                network_relay_url: "wss://relay.widgetry.org/", // Optional: mounts open internet websocket relay
-                autostart: true
-            });
-        };
+            if (welcomeMsg) welcomeMsg.remove();
+            v86Canvas.innerHTML = '';
+            
+            // Checking object declaration tracking
+            if (typeof V86 !== 'function') {
+                return alert("Critical Error: V86 framework initialization failed. Check your network console tabs.");
+            }
 
-        // --- ENGINE 2 IMPLEMENTATION (TinyEMU) ---
-        document.getElementById('run-tinyemu').onclick = function() {
-            const input = document.getElementById('tinyemu-file');
-            if (input.files.length === 0) { return alert("Please select a valid 64-bit RISC-V compilation block!"); }
-            wipeViewport();
-
-            let term = new Term(80, 30, function(str) {
-                if (window.vm_send_chars) window.vm_send_chars(str);
-            }, termCanvas);
-
-            term.write("Instantiating TinyEMU RISC-V 64-Bit Core components...\r\n");
-
-            window.TinyEMU_Options = {
-                mem_size: 256 * 1024 * 1024,
-                drive_file: input.files,
-                cmdline: "console=hvc0 root=/dev/vda ro",
-                on_output: function(str) { term.write(str); }
-            };
-
-            const loaderScript = document.createElement('script');
-            loaderScript.src = "https://bellard.org";
-            document.head.appendChild(loaderScript);
-        };
-
-        // --- ENGINE 3 IMPLEMENTATION (Bochs Integration Code Fix) ---
-        document.getElementById('run-bochs').onclick = function() {
-            const input = document.getElementById('bochs-file');
-            if (input.files.length === 0) { return alert("Please select an x86_64 system block or ISO!"); }
-            wipeViewport();
-
-            v86Canvas.innerHTML = `
-                <div class="status-msg">
-                    <strong style="color: #ff3333;">Bochs WebAssembly Execution Interrupted</strong>
-                    <span>
-                        Error: File "${input.files[0].name}" is a raw image asset.<br><br>
-                        Bochs cannot boot independently inside a standard browser sandbox environment unless it is deployed directly alongside an active <strong>Emscripten local proxy filesystem worker node</strong> to parse the matching configuration file headers.
-                    </span>
-                </div>`;
+            try {
+                new V86({
+                    // Pulling matching binaries from the same package instance to stop network block conflicts
+                    wasm_path: "https://unpkg.com",
+                    screen_container: v86Canvas,
+                    bios: { url: "https://unpkg.com" },
+                    vga_bios: { url: "https://unpkg.com" },
+                    cdrom: { file: input.files }, 
+                    boot_order: 0x123, 
+                    memory_size: 512 * 1024 * 1024, 
+                    vga_memory_size: 8 * 1024 * 1024,
+                    autostart: true
+                });
+            } catch (err) {
+                alert("Initialization Failed: " + err.message);
+            }
         };
     </script>
 </body>
