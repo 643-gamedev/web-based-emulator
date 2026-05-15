@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Web OS Launcher</title>
-    
-    <!-- Using unpkg stable mirror to ensure global initialization on HTTPS platforms -->
-    <script src="https://unpkg.com"></script>
-
+    <title>Universal Web OS Launcher (Resilient Edition)</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -114,19 +110,20 @@
             line-height: 14px;
         }
         #v86_canvas canvas { display: block; max-width: 100%; height: auto; }
-        .status-msg { padding: 30px; text-align: center; color: #666; font-size: 14px; }
+        .status-msg { padding: 30px; text-align: center; color: #aaa; font-size: 14px; max-width: 500px; line-height: 1.5; }
+        #network-status { font-family: monospace; font-size: 11px; color: #555; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <h1>Universal Web OS Launcher</h1>
-    <div class="subtitle">An isolated WebAssembly sandbox running inside local browser memory.</div>
+    <div class="subtitle">Multi-Engine Sandbox Cluster with Cascading Network Failover Protocols.</div>
 
     <div id="workspace">
-        <div class="section-header">🖥️ Engine 1: High-Compatibility x86 (v86 JIT)</div>
+        <div class="section-header">激 Engine 1: High-Compatibility x86 (Resilient Pipeline)</div>
         <div class="engine-box">
-            <div class="engine-name">Optimized v86 Engine Pipeline</div>
-            <div class="desc">Select your 684 MB Arch Linux ISO file (`i686`) here. It will boot directly inside your browser tab window.</div>
+            <div class="engine-name">Fault-Tolerant Auto-Sourced Engine</div>
+            <div class="desc">Select your 684 MB Arch Linux ISO file (`i686`) here. The core tracks three alternate mirrors to resolve ReferenceErrors dynamically.</div>
             <div class="input-row">
                 <input type="file" id="v86-file" accept=".iso">
                 <button id="run-v86">Boot 32-Bit Arch Linux</button>
@@ -140,14 +137,86 @@
         
         <div id="screen-viewport">
             <div id="v86_canvas"></div>
-            <div id="welcome-msg" class="status-msg">No virtual machine active. Select your Arch Linux ISO file above to start.</div>
+            <div id="welcome-msg" class="status-msg">Virtual hardware stack idle. Load your Arch Linux image and select boot.</div>
         </div>
+        <div id="network-status">Network Layer: Initializing pipeline monitors...</div>
     </div>
 
-    <script>
+    <script type="module">
         const v86Canvas = document.getElementById('v86_canvas');
         const viewport = document.getElementById('screen-viewport');
         const welcomeMsg = document.getElementById('welcome-msg');
+        const statusLog = document.getElementById('network-status');
+
+        // Matrix definitions defining mirror nodes [1]
+        const CONTROLLER_MIRRORS = [
+            {
+                name: "Unpkg Primary (v0.15 ES Module)",
+                js: "https://unpkg.com",
+                wasm: "https://unpkg.com",
+                bios: "https://unpkg.com",
+                vga: "https://unpkg.com",
+                isModule: true
+            },
+            {
+                name: "jsDelivr Secondary (v0.15 ES Module)",
+                js: "https://jsdelivr.net",
+                wasm: "https://jsdelivr.net",
+                bios: "https://jsdelivr.net",
+                vga: "https://jsdelivr.net",
+                isModule: true
+            },
+            {
+                name: "cdnjs Legacy (v0.14 Global Script Standard)",
+                js: "https://cloudflare.com",
+                wasm: "https://cloudflare.com",
+                bios: "https://githubusercontent.com",
+                vga: "https://githubusercontent.com",
+                isModule: false
+            }
+        ];
+
+        let ActiveV86EngineClass = null;
+        let ActiveConfigTarget = null;
+
+        // Self-executing network test loop cycling assets on window layout draw
+        async function resolveFunctionalEngine() {
+            for (let target of CONTROLLER_MIRRORS) {
+                try {
+                    statusLog.innerText = `Network Layer: Testing execution integrity of ${target.name}...`;
+                    if (target.isModule) {
+                        const module = await import(target.js);
+                        if (module && module.V86) {
+                            ActiveV86EngineClass = module.V86;
+                            ActiveConfigTarget = target;
+                            statusLog.innerText = `Network Layer: Active Connection [${target.name}] ready.`;
+                            return;
+                        }
+                    } else {
+                        // Injects classical procedural script fallback to bypass global namespace drop conflicts
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = target.js;
+                            script.onload = () => {
+                                if (typeof window.V86 !== 'undefined') {
+                                    ActiveV86EngineClass = window.V86;
+                                    ActiveConfigTarget = target;
+                                    resolve();
+                                } else { reject(); }
+                            };
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                        statusLog.innerText = `Network Layer: Active Legacy Connection [${target.name}] verified.`;
+                        return;
+                    }
+                } catch (e) {
+                    console.warn(`Node failover sequence engaged. Target ${target.name} offline or blocked.`);
+                }
+            }
+            statusLog.style.color = "#ff3333";
+            statusLog.innerText = "Network Layer: FATAL error. All standard CDN repository platforms blocked by remote host.";
+        }
 
         document.getElementById('go-fullscreen').onclick = function() {
             if (!document.fullscreenElement) {
@@ -161,21 +230,19 @@
             const input = document.getElementById('v86-file');
             if (input.files.length === 0) { return alert("Please select your 684MB Arch Linux .iso file first!"); }
             
-            if (welcomeMsg) welcomeMsg.remove();
-            v86Canvas.innerHTML = '';
-            
-            // Checking object declaration tracking
-            if (typeof V86 !== 'function') {
-                return alert("Critical Error: V86 framework initialization failed. Check your network console tabs.");
+            if (!ActiveV86EngineClass || !ActiveConfigTarget) {
+                return alert("The failover layout monitor is still scanning network nodes. Please wait 5 seconds and press boot again.");
             }
 
+            if (welcomeMsg) welcomeMsg.remove();
+            v86Canvas.innerHTML = '';
+
             try {
-                new V86({
-                    // Pulling matching binaries from the same package instance to stop network block conflicts
-                    wasm_path: "https://unpkg.com",
+                new ActiveV86EngineClass({
+                    wasm_path: ActiveConfigTarget.wasm,
                     screen_container: v86Canvas,
-                    bios: { url: "https://unpkg.com" },
-                    vga_bios: { url: "https://unpkg.com" },
+                    bios: { url: ActiveConfigTarget.bios },
+                    vga_bios: { url: ActiveConfigTarget.vga },
                     cdrom: { file: input.files }, 
                     boot_order: 0x123, 
                     memory_size: 512 * 1024 * 1024, 
@@ -183,9 +250,12 @@
                     autostart: true
                 });
             } catch (err) {
-                alert("Initialization Failed: " + err.message);
+                alert("Runtime Execution Interrupted: " + err.message);
             }
         };
+
+        // Fire background network tests on document init
+        window.addEventListener('DOMContentLoaded', resolveFunctionalEngine);
     </script>
 </body>
 </html>
